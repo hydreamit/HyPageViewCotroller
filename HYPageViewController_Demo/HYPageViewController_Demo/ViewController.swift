@@ -14,7 +14,17 @@ class ViewController: HYPageViewController_ScrollView {
 
     override func viewDidLoad() {
         super.viewDidLoad()
-         addAllChildController()
+        
+    
+            addAllChildController()
+        
+        
+//        dispatch_after(dispatch_time(3, Int64(1 * Double(NSEC_PER_SEC))), dispatch_get_main_queue()) {
+//            self.addAllChildController()
+//            self.startIndex = 5
+//            self.refreshPageView()
+//        }
+        
     }
     
     private func addAllChildController() {

@@ -20,9 +20,13 @@ class HYPageViewController_CollectionView: UIViewController {
     let ScreenH = UIScreen.mainScreen().bounds.height
     let scale: CGFloat = 1.25
     let titleScrollViewH: CGFloat = 44
-    let titleBtnMargin: CGFloat = 25
+    var titleBtnMargin: CGFloat = 25
     let titleBottomLineH: CGFloat = 2
     var lastOffSetX: CGFloat = 0
+    var isClickBtn = false
+    var animaTime = 0.25
+    
+     var startIndex = 0
     
     private lazy var titleBtns = [UIButton]()
     var selectedBtn = UIButton()
@@ -30,6 +34,8 @@ class HYPageViewController_CollectionView: UIViewController {
     
     private lazy var collectionView: UICollectionView = {
         let collectionView: UICollectionView = UICollectionView(frame: self.view.bounds, collectionViewLayout: MainLayout())
+            collectionView.backgroundColor = UIColor.whiteColor()
+            collectionView.bounces = false
             collectionView.dataSource = self
             collectionView.delegate = self
             collectionView.pagingEnabled = true
@@ -39,13 +45,13 @@ class HYPageViewController_CollectionView: UIViewController {
     
     private lazy var titleScrollView: UIScrollView = {
         let titleScrollView: UIScrollView = UIScrollView()
-        titleScrollView.showsHorizontalScrollIndicator = false
-        return titleScrollView;
+            titleScrollView.showsHorizontalScrollIndicator = false
+     return titleScrollView;
     }()
     private lazy var titleBottomLine: UIView = {
         let titleBottomLine: UIView = UIView()
-        titleBottomLine.backgroundColor = UIColor.redColor()
-        return titleBottomLine
+            titleBottomLine.backgroundColor = UIColor.redColor()
+     return titleBottomLine
     }()
     
     override func viewDidLoad() {
@@ -86,11 +92,12 @@ extension HYPageViewController_CollectionView {
         var btnX: CGFloat = titleBtnMargin
         for i in 0..<childCount {
             let btn = UIButton()
-            btn.addTarget(self, action: #selector(HYPageViewController_CollectionView.clickBtn(_:)), forControlEvents: .TouchUpInside)
-            btn.setTitle(childViewControllers[i].title, forState: .Normal)
-            btn.titleLabel?.font = UIFont.systemFontOfSize(15)
-            btn.setTitleColor(UIColor.blackColor(), forState: .Normal)
-            btn.tag = i
+                btn.addTarget(self, action: #selector(HYPageViewController_CollectionView.clickBtn(_:)), forControlEvents: .TouchUpInside)
+                
+                btn.setTitle(childViewControllers[i].title, forState: .Normal)
+                btn.titleLabel?.font = UIFont.systemFontOfSize(15)
+                btn.setTitleColor(UIColor.blackColor(), forState: .Normal)
+                btn.tag = i
             titleBtns.append(btn)
             titleScrollView.addSubview(btn)
             
@@ -99,19 +106,26 @@ extension HYPageViewController_CollectionView {
             btn.sizeToFit()
             btn.frame.size.height = titleBtnH
             btnX += (btn.frame.size.width + titleBtnMargin)
-            
-            if i == 0 {
-                clickBtn(btn)
+        }
+        
+        if btnX < ScreenW {
+            titleBtnMargin += (ScreenW - btnX) / CGFloat(childCount + 1)
+            btnX = titleBtnMargin
+            for btn in titleBtns {
+                btn.frame.origin.x = btnX
+                btnX += (btn.frame.size.width + titleBtnMargin)
             }
         }
         
+        titleScrollView.contentSize = CGSize(width:btnX  , height: 0)
+        
         if childCount > 0 {
-            setUpTitleBottomLine(titleBtns.first!)
+            let startSelIndex = startIndex < childCount ? startIndex : 0
+            clickBtn(titleBtns[startSelIndex])
+            setUpTitleBottomLine(titleBtns[startSelIndex])
             titleScrollView.addSubview(titleBottomLine)
         }
         
-        titleScrollView.contentSize = CGSize(width:btnX  , height: 0)
-        collectionView.contentSize = CGSize(width: ScreenW * CGFloat(childCount), height: 0)
     }
     
     private func setUpTitleBottomLine(btn: UIButton){
@@ -122,23 +136,25 @@ extension HYPageViewController_CollectionView {
     }
     
     @objc private func clickBtn(btn: UIButton) {
+        isClickBtn = true
         setUpSelBtn(btn)
-        UIView.animateWithDuration(0.25) {
-            self.titleBottomLine.frame.size.width = btn.frame.size.width + 10
-            self.titleBottomLine.center.x = btn.center.x
-        }
-        collectionView.contentOffset = CGPoint(x: view.bounds.width * CGFloat(btn.tag), y: 0)
+        self.collectionView.setContentOffset(CGPoint(x: self.view.bounds.width * CGFloat(btn.tag), y: 0), animated: false)
     }
     
     private func setUpSelBtn(btn: UIButton) {
         
-        selectedBtn.transform = CGAffineTransformIdentity
-        selectedBtn.setTitleColor(UIColor.blackColor(), forState: .Normal)
+        UIView.animateWithDuration(isInitialized ? animaTime : 0) {
+            self.selectedBtn.transform = CGAffineTransformIdentity
+            self.selectedBtn.setTitleColor(UIColor.blackColor(), forState: .Normal)
+            
+            btn.transform = CGAffineTransformMakeScale(self.scale, self.scale)
+            btn.setTitleColor(UIColor.redColor(), forState: .Normal)
+            
+            self.titleBottomLine.frame.size.width = btn.frame.size.width + 10
+            self.titleBottomLine.center.x = btn.center.x
+        }
         
         setSelBtnToCenter(btn)
-        
-        btn.transform = CGAffineTransformMakeScale(scale, scale)
-        btn.setTitleColor(UIColor.redColor(), forState: .Normal)
         
         selectedBtn = btn
     }
@@ -157,7 +173,9 @@ extension HYPageViewController_CollectionView {
         if offSetX > maxOffSetX {
             offSetX = maxOffSetX
         }
-        titleScrollView.setContentOffset(CGPoint(x: offSetX, y: 0), animated: true)
+        UIView.animateWithDuration(isInitialized ? animaTime : 0) {
+            self.titleScrollView.contentOffset = CGPoint(x: offSetX, y: 0)
+        }
     }
     
 }
@@ -184,10 +202,16 @@ extension HYPageViewController_CollectionView: UIScrollViewDelegate{
     func scrollViewDidScroll(scrollView: UIScrollView) {
         
         let offSetX = scrollView.contentOffset.x
+        let offsetDelta = offSetX - lastOffSetX
+        lastOffSetX = offSetX
+        
+        if isClickBtn {
+            isClickBtn = false
+            return
+        }
+        
         let index = Int(offSetX / view.bounds.size.width)
-        
         let leftBtn = titleBtns[index]
-        
         var rightBtn: UIButton?
         if index + 1 < titleBtns.count {
             rightBtn = titleBtns[index + 1]
@@ -195,9 +219,6 @@ extension HYPageViewController_CollectionView: UIScrollViewDelegate{
         
         let scaleRight = (scrollView.contentOffset.x / view.bounds.size.width) - CGFloat(index)
         let scaleLeft = 1 - scaleRight
-        
-        
-        
         let currentScale = scale - 1
         
         leftBtn.transform = CGAffineTransformMakeScale(scaleLeft * currentScale + 1, scaleLeft * currentScale + 1)
@@ -209,16 +230,21 @@ extension HYPageViewController_CollectionView: UIScrollViewDelegate{
         let rightColor = UIColor(colorLiteralRed: Float(scaleRight), green: 0, blue: 0, alpha: 1)
         leftBtn.setTitleColor(leftColor, forState: .Normal)
         rightBtn?.setTitleColor(rightColor, forState: .Normal)
-        lastOffSetX = offSetX
+        
+        var offx: CGFloat = 0
+        var offW: CGFloat = 0
+        if let rBtn = rightBtn {
+            offx = rBtn.frame.origin.x - leftBtn.frame.origin.x
+            offW = rBtn.frame.size.width - leftBtn.frame.size.width
+        }
+        titleBottomLine.frame.size.width += (offW * offsetDelta / ScreenW)
+        titleBottomLine.center.x +=  (offx * offsetDelta / ScreenW)
         
     }
+    
     func scrollViewDidEndDecelerating(scrollView: UIScrollView) {
         let index = scrollView.contentOffset.x / view.bounds.size.width
         setUpSelBtn(titleBtns[Int(index)])
-        UIView.animateWithDuration(0.25) {
-            self.titleBottomLine.frame.size.width = self.titleBtns[Int(index)].frame.size.width + 10
-            self.titleBottomLine.center.x = self.titleBtns[Int(index)].center.x
-        }
     }
 }
 
