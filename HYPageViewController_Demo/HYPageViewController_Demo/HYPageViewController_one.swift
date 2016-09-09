@@ -22,14 +22,13 @@ class HYPageViewController_ScrollView: UIViewController {
     let titleScrollViewH: CGFloat = 44
     var titleBtnMargin: CGFloat = 25
     let titleBottomLineH: CGFloat = 2
-    var lastOffSetX: CGFloat = 0
-    var isClickBtn = false
     var animaTime = 0.25
-    
     var startIndex = 0
     
     private var refreshingPageView = true
     private var isInitialized = false
+    var lastOffSetX: CGFloat = 0
+    var isClickBtn = false
     
     private lazy var titleBtns = [UIButton]()
     var selectedBtn = UIButton()
@@ -63,7 +62,6 @@ class HYPageViewController_ScrollView: UIViewController {
            setUpAllTitle()
            isInitialized = true
            refreshingPageView = false
-            
         }
     }
     
@@ -77,7 +75,6 @@ class HYPageViewController_ScrollView: UIViewController {
         refreshingPageView = false
     }
 }
-
 
 
 extension HYPageViewController_ScrollView {
@@ -189,7 +186,7 @@ extension HYPageViewController_ScrollView {
     
     private func addChildView(index: Int) {
         let vc = childViewControllers[index]
-        if vc.view.superview != nil {
+        if  vc.view.superview != nil {
             return
         }
         vc.view.frame = CGRect(x: CGFloat(index) * view.bounds.size.width, y: 0, width: view.bounds.size.width, height: contentScrollView.bounds.size.height)

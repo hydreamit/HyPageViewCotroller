@@ -30,6 +30,7 @@ class HYPageViewController_CollectionView: UIViewController {
     
     private lazy var titleBtns = [UIButton]()
     var selectedBtn = UIButton()
+    private var refreshingPageView = true
     var isInitialized = false
     
     private lazy var collectionView: UICollectionView = {
@@ -44,9 +45,9 @@ class HYPageViewController_CollectionView: UIViewController {
     }()
     
     private lazy var titleScrollView: UIScrollView = {
-        let titleScrollView: UIScrollView = UIScrollView()
-            titleScrollView.showsHorizontalScrollIndicator = false
-     return titleScrollView;
+            let titleScrollView: UIScrollView = UIScrollView()
+                titleScrollView.showsHorizontalScrollIndicator = false
+         return titleScrollView;
     }()
     private lazy var titleBottomLine: UIView = {
         let titleBottomLine: UIView = UIView()
@@ -62,7 +63,18 @@ class HYPageViewController_CollectionView: UIViewController {
         if !isInitialized {
             setUpAllTitle()
             isInitialized = true
+            refreshingPageView = false
         }
+    }
+    func refreshPageView(){
+        for view in titleScrollView.subviews {
+            view.removeFromSuperview()
+        }
+        titleBtns.removeAll()
+        refreshingPageView = true
+        setUpAllTitle()
+        collectionView.reloadData()
+        refreshingPageView = false
     }
 }
 
@@ -108,7 +120,7 @@ extension HYPageViewController_CollectionView {
             btnX += (btn.frame.size.width + titleBtnMargin)
         }
         
-        if btnX < ScreenW {
+        if childCount > 0 && btnX < ScreenW {
             titleBtnMargin += (ScreenW - btnX) / CGFloat(childCount + 1)
             btnX = titleBtnMargin
             for btn in titleBtns {
@@ -143,7 +155,8 @@ extension HYPageViewController_CollectionView {
     
     private func setUpSelBtn(btn: UIButton) {
         
-        UIView.animateWithDuration(isInitialized ? animaTime : 0) {
+        UIView.animateWithDuration(refreshingPageView ? 0 : animaTime) {
+            
             self.selectedBtn.transform = CGAffineTransformIdentity
             self.selectedBtn.setTitleColor(UIColor.blackColor(), forState: .Normal)
             
@@ -173,11 +186,10 @@ extension HYPageViewController_CollectionView {
         if offSetX > maxOffSetX {
             offSetX = maxOffSetX
         }
-        UIView.animateWithDuration(isInitialized ? animaTime : 0) {
+        UIView.animateWithDuration(refreshingPageView ? 0 : animaTime) {
             self.titleScrollView.contentOffset = CGPoint(x: offSetX, y: 0)
         }
     }
-    
 }
 
 extension HYPageViewController_CollectionView: UICollectionViewDataSource, UICollectionViewDelegate {
@@ -193,10 +205,8 @@ extension HYPageViewController_CollectionView: UICollectionViewDataSource, UICol
         vc.view.frame = CGRect(x: 0, y: 0, width: collectionView.bounds.size.width, height: collectionView.bounds.size.height)
         cell.contentView.addSubview(vc.view)
         return cell
-        
     }
 }
-
 
 extension HYPageViewController_CollectionView: UIScrollViewDelegate{
     func scrollViewDidScroll(scrollView: UIScrollView) {
